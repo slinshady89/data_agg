@@ -39,7 +39,7 @@ def main(args):
     gt_labels[images] = []
 
     for seq in seq_list:
-        gt_base_path = args.base_dir + seq + '/' + args.gt_labels
+        gt_base_path = args.base_dir + seq + args.gt_labels
         for gt_label in os.listdir(gt_base_path):
             gt_labels[images].append({name: gt_label, sequence: seq})
 
@@ -51,18 +51,27 @@ def main(args):
     with open(args.base_dir + 'train_list.json', "w") as f:
         json.dump(gt_labels, f)
 
-    with open(args.base_dir + 'train_list.json', 'r') as file:
-        file_list = json.load(file)
+    create_working_dir(args, 'Data/')
+    label_path = create_working_dir(args, 'Data/Labels/')
+    image_path = create_working_dir(args, 'Data/Images/')
 
-    test_path = create_working_dir(args, 'test/')
+    print('\nSaving labels to:\n' + label_path)
+    print('\nSaving rgb images to:\n' + image_path)
+    print('\n')
 
     for i, item in enumerate(gt_labels[images]):
-        # if i > 10:
+        # if i > 2:
         #     break
-        img = cv2.imread(args.base_dir + item[sequence] + '/' + args.gt_labels + item[name])
-        status = False
-        while not status:
-            status = cv2.imwrite(test_path + item[sequence] + '_' + item[name], img)
+        label = cv2.imread(args.base_dir + item[sequence] + args.gt_labels + item[name])
+        img = cv2.imread(args.base_dir + item[sequence] + args.images + item[name])
+        l_status = False
+        while not l_status:
+            l_status = cv2.imwrite(label_path + item[sequence] + '_' + item[name], label)
+        i_status = False
+        while not i_status:
+            i_status = cv2.imwrite(image_path + item[sequence] + '_' + item[name], img)
+
+        print('\r\033[1A\033[0K %d of %d' % (i + 1, len(gt_labels[images])))
 
 
 if __name__ == "__main__":
