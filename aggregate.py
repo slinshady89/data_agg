@@ -23,7 +23,6 @@ def create_working_dir(args, folder_name):
 
 
 def main(args):
-
     # image_name = os.path.join("%06d" % 1)  # 000001
 
     seq_list = []
@@ -35,7 +34,7 @@ def main(args):
     name = 'name'
     sequence = 'sequence'
     iou_green = 'iou_green'
-    
+
     gt_labels = dict()
     gt_labels[images] = []
 
@@ -76,23 +75,26 @@ def main(args):
             # if test_read[images][j][iou_green] > 0:
             if (test_list[images][i][name] == test_read[images][j][name]) and \
                     (test_list[images][i][sequence] == test_read[images][j][sequence]):
-
-                print('\nFound match at %d and %d:' % (i, j))
-                print(test_list[images][i], test_read[images][j])
+                # print('\nFound match at %d and %d:' % (i, j))
+                # print(test_list[images][i], test_read[images][j])
                 count += 1
 
     print('\nFound %d matches\n' % count)
 
     sorted_list = sorted(test_read[images], key = itemgetter(iou_green), reverse = True)
 
-    for item in sorted_list:
-        print(item)
+    ix = np.random.choice(np.arange(len(sorted_list)), 8)
+    print(len(sorted_list))
+    print(np.arange(len(sorted_list)))
+
+    for i in range(0, len(sorted_list) - 1):
+        print(sorted_list[i])
+
 
 if __name__ == "__main__":
-    try :
+    try:
         args = argparser()
         main(args)
         print("\nFinished without interrupt. \n\nGoodbye!")
     except KeyboardInterrupt:
         print("\n Cancelled by user. \n\nGoodbye!")
-
