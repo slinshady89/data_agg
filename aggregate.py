@@ -4,6 +4,7 @@ import numpy as np
 import os
 from random import shuffle
 import json
+from operator import itemgetter
 
 
 def create_working_dir(args, folder_name):
@@ -30,49 +31,62 @@ def main(args):
         if not i == 8:
             seq_list.append(os.path.join('%02d' % i))
 
-
     images = 'images'
     name = 'name'
     sequence = 'sequence'
+    iou_green = 'iou_green'
     
-    gt_labels = {}
+    gt_labels = dict()
     gt_labels[images] = []
 
     for seq in seq_list:
         gt_base_path = args.base_dir + seq + args.gt_labels
         for gt_label in os.listdir(gt_base_path):
-            gt_labels[images].append({name: gt_label, sequence: seq})
+            gt_labels[images].append({name: gt_label, sequence: seq, iou_green: 0.00})
 
     print(seq_list)
     print('Length of ground truth labeled images %d\n\n' % len(gt_labels[images]))
 
     shuffle(gt_labels[images])
 
-    with open(args.base_dir + 'train_list.json', "w") as f:
-        json.dump(gt_labels, f)
+    test_list = dict()
+    test_list[images] = []
 
-    create_working_dir(args, 'Data/')
-    label_path = create_working_dir(args, 'Data/Labels/')
-    image_path = create_working_dir(args, 'Data/Images/')
+    test_list[images] = gt_labels[images][0:20]
 
-    print('\nSaving labels to:\n' + label_path)
-    print('\nSaving rgb images to:\n' + image_path)
-    print('\n')
+    with open(args.base_dir + 'Data/test_list.json', "w") as f:
+        json.dump(test_list, f)
 
-    for i, item in enumerate(gt_labels[images]):
-        # if i > 2:
-        #     break
-        label = cv2.imread(args.base_dir + item[sequence] + args.gt_labels + item[name])
-        img = cv2.imread(args.base_dir + item[sequence] + args.images + item[name])
-        l_status = False
-        while not l_status:
-            l_status = cv2.imwrite(label_path + item[sequence] + '_' + item[name], label)
-        i_status = False
-        while not i_status:
-            i_status = cv2.imwrite(image_path + item[sequence] + '_' + item[name], img)
+    with open(args.base_dir + 'Data/test_list.json', "r") as f:
+        test_read = json.load(f)
 
-        print('\r\033[1A\033[0K %d of %d' % (i + 1, len(gt_labels[images])))
+    shuffle(test_read[images])
 
+    for i, label in enumerate(test_read[images]):
+        if i >= 10:
+            break
+        label[iou_green] = 0.1
+
+    with open(args.base_dir + 'Data/test_read.json', "w") as f:
+        json.dump(test_read, f)
+
+    count = 0
+    for i in range(0, len(test_list[images]) - 1):
+        for j in range(0, len(test_read[images]) - 1):
+            # if test_read[images][j][iou_green] > 0:
+            if (test_list[images][i][name] == test_read[images][j][name]) and \
+                    (test_list[images][i][sequence] == test_read[images][j][sequence]):
+
+                print('\nFound match at %d and %d:' % (i, j))
+                print(test_list[images][i], test_read[images][j])
+                count += 1
+
+    print('\nFound %d matches\n' % count)
+
+    sorted_list = sorted(test_read[images], key = itemgetter(iou_green), reverse = True)
+
+    for item in sorted_list:
+        print(item)
 
 if __name__ == "__main__":
     try :
