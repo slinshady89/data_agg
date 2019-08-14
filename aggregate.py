@@ -12,10 +12,7 @@ def create_working_dir(args, folder_name):
     try:
         os.mkdir(path)
     except OSError as e:
-        if e.errno == 17:
-            print(path)
-            print('Directory exists already! Everything fine!')
-        else:
+        if e.errno != 17:
             print('OSError: %s', e)
     else:
         print("Successfully created the directory %s " % path)
