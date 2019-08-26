@@ -17,12 +17,12 @@ def main(args):
         print('\nDAgger Iteration: %d\n' % aggregator.dag_it_num)
         aggregator.on_new_iter()
         train, val = aggregator.get_training_data()
-        aggregator.save_list(train, 'train')
-        aggregator.save_list(val, 'val')
+        # aggregator.save_list(train, 'train')
+        # aggregator.save_list(val, 'val')
         print('Length train set %d' % len(train))
         print('Length validation set %d' % len(val))
         if aggregator.images_evaluated == len(aggregator.agg_list):
-            print('Stopping DAgger because no new Data could be aggregated.\nCreate more!')
+            print('DAgger stopped!')
             break
         aggregator.aggregate()
 

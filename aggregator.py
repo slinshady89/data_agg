@@ -99,18 +99,22 @@ class Aggregator(object):
         else:
             train = self.agg_list[:self.len_train_set]
             num_images_found = len(train)
-
+        images_not_collected = 0
         for i in range(num_images_found,
                        len(self.agg_list)):
             if self.agg_list[i][self.k_quota_g] >= 0.07:
                 self.agg_list[i][self.k_dag_it] = self.dag_it_num
                 train.append(self.agg_list[i])
                 num_images_found += 1
+
             if num_images_found >= self.num_imgs_to_train:
                 print('%d images for next DAgger Iteration found at index %d of total images %d'
                       % (self.num_imgs_to_train, i, len(self.agg_list)))
                 break
-        self.images_evaluated = i
+            if i == len(self.agg_list)-1:
+                print('Stopping DAgger because no new Data could be aggregated.\nCreate more!')
+                self.images_evaluated = i+1
+                break
         shuffle(train)
         return train[:int(len(train) * self.train_perc)], train[int(len(train) * self.train_perc):]
 
