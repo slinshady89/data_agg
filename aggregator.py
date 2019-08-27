@@ -36,7 +36,8 @@ class Aggregator(object):
         # images with green quota lower than 0.07 aren't further processed
         for gt_label in os.listdir(self.base_dir + self.label_dir):
             self.agg_list.append({self.k_img_name: gt_label, self.k_precision: -1.0, self.k_recall: -1.0,
-                                  self.k_pr: -1.0, self.k_dag_it: 200, self.k_quota_g: -1.0})
+                                  self.k_pr: -1.0, self.k_dag_it: 200,
+                                  self.k_quota_g: -1.0})
 
         self.len_agg_list = len(self.agg_list)
         shuffle(self.agg_list)
@@ -94,31 +95,39 @@ class Aggregator(object):
         # shuffle data
         shuffle(self.agg_list)
         self.sort_agg_list()
+        # adding training data of last dagger iterations to training list
         if self.dag_it_num > 1:
             train = self.agg_list[:self.len_train_set + self.len_agg_set * (self.dag_it_num - 1)]
             num_images_found = len(train)
         else:
             train = self.agg_list[:self.len_train_set]
             num_images_found = len(train)
+        # training worst inference results to trainings list for the next dagger iteration
         for i in range(num_images_found,
                        len(self.agg_list)):
-            if self.agg_list[i][self.k_quota_g] >= 0.07:
-                self.agg_list[i][self.k_dag_it] = self.dag_it_num
-                train.append(self.agg_list[i])
-                num_images_found += 1
-
+            # stop data aggregation if num of needed data for this dagger iteration is achieved
             if num_images_found >= self.num_imgs_to_train:
                 print('%d images for next DAgger Iteration found at index %d of total images %d'
                       % (self.num_imgs_to_train, i, len(self.agg_list)))
                 break
+            # aggregate worst data of inference of last iteration
+            if self.agg_list[i][self.k_quota_g] >= 0.07:
+                self.agg_list[i][self.k_dag_it] = self.dag_it_num
+                train.append(self.agg_list[i])
+                num_images_found += 1
             if i == len(self.agg_list)-1:
                 print('Stopping DAgger because no new Data could be aggregated.\nCreate more!')
                 self.dag_done = True
                 # is this break really necessary since if i == len(arr) the for-loop ends anyway?
                 # at all it doesn't hurt to highlight it as a stopping condition
                 break
+        eval = []
+        for i in range(len(self.agg_list)):
+            if self.agg_list[i][self.k_dag_it] == 200:
+                eval.append(self.agg_list[i])
+        # shuffle this list ans split into training and validation
         shuffle(train)
-        return train[:int(len(train) * self.train_perc)], train[int(len(train) * self.train_perc):]
+        return train[:int(len(train) * self.train_perc)], train[int(len(train) * self.train_perc):], eval
 
     def save_list(self, list_to_save = None, name = None):
         if list_to_save is None:

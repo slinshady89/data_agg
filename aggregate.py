@@ -14,15 +14,18 @@ def main(args):
     for i in range(0, 100):
         print('\nDAgger Iteration: %d\n' % aggregator.dag_it_num)
         aggregator.on_new_iter()
-        train, val = aggregator.get_training_data()
-        # aggregator.save_list(train, 'train')
-        # aggregator.save_list(val, 'val')
+        train, val, eval = aggregator.get_training_data()
+        aggregator.save_list(train, 'train')
+        aggregator.save_list(val, 'val')
+        aggregator.save_list(eval, 'eval')
         print('Length train set %d' % len(train))
         print('Length validation set %d' % len(val))
+        print('Length eval set %d' % len(eval))
         if aggregator.dag_done:
             print('DAgger stopped!')
             break
         aggregator.aggregate()
+        aggregator.save_list()
 
 
 if __name__ == "__main__":
