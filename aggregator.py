@@ -36,7 +36,7 @@ class Aggregator(object):
         # images with green quota lower than 0.07 aren't further processed
         for gt_label in os.listdir(self.base_dir + self.label_dir):
             self.agg_list.append({self.k_img_name: gt_label, self.k_precision: -1.0, self.k_recall: -1.0,
-                                  self.k_pr: 2.0, self.k_dag_it: 200, self.k_quota_g: randint(6, 12) / 100})
+                                  self.k_pr: -1.0, self.k_dag_it: 200, self.k_quota_g: -1.0})
 
         self.len_agg_list = len(self.agg_list)
         shuffle(self.agg_list)
@@ -130,8 +130,13 @@ class Aggregator(object):
                 json.dump(list_to_save, f)
         f.close()
 
-    def load_list(self):
-        with open(self.agg_list_name, "r") as f:
-            list_chunk = json.load(f)
+    def load_list(self, list_to_load = None, name = None):
+        if list_to_load is None:
+            with open(self.agg_list_name, "r") as f:
+                list_chunk = json.load(f)
+        else:
+            path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it_num + name + '_%02d' % self.dag_it_num + '.json'
+            with open(path, "w") as f:
+                list_chunk = json.load(f)
         f.close()
         return list_chunk
