@@ -8,6 +8,7 @@ from operator import itemgetter
 class Aggregator(object):
     def __init__(self):
         self.dag_it_num = 0
+        self.dag_done = False
         self.base_dir = '/media/localadmin/BigBerta/11Nils/kitti/dataset/sequences/Data/'
         self.img_dir = 'images/'
         self.label_dir = 'labels/'
@@ -99,7 +100,6 @@ class Aggregator(object):
         else:
             train = self.agg_list[:self.len_train_set]
             num_images_found = len(train)
-        images_not_collected = 0
         for i in range(num_images_found,
                        len(self.agg_list)):
             if self.agg_list[i][self.k_quota_g] >= 0.07:
@@ -113,7 +113,9 @@ class Aggregator(object):
                 break
             if i == len(self.agg_list)-1:
                 print('Stopping DAgger because no new Data could be aggregated.\nCreate more!')
-                self.images_evaluated = i+1
+                self.dag_done = True
+                # is this break really necessary since if i == len(arr) the for-loop ends anyway?
+                # at all it doesn't hurt to highlight it as a stopping condition
                 break
         shuffle(train)
         return train[:int(len(train) * self.train_perc)], train[int(len(train) * self.train_perc):]
