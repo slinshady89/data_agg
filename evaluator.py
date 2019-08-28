@@ -42,12 +42,20 @@ class Evaluator(object):
         return prec_rec_qut
 
     def process_batch(self, q, begin, batch_size):
-        if begin + batch_size > len(self.eval_list):
-            print(begin)
-            print(batch_size)
-            batch_size = len(self.eval_list) - begin
+        # if begin + 1 + batch_size >= len(self.eval_list):
+        #     print(begin)
+        #     print(batch_size)
+        #     batch_size = len(self.eval_list) - begin - 1
         prq = np.zeros((batch_size, 3, 3), dtype = np.float)
-        for i in range(begin, begin + batch_size):
-            prq[i - begin] = self.process_image(i)
+        # if begin > 700:
+        #     print(prq.shape)
+        for i in range(batch_size):
+            prq[i] = self.process_image(i)
         q.put(prq)
+
+    # def process_one_batch(self, begin, batch_size):
+    #     prq = np.zeros((len(batch_size), 3, 3), dtype = np.float)
+    #     for i in range(len(batch_size)):
+    #         prq[i] = self.process_image(i)
+    #     q.put(prq)
 

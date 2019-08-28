@@ -35,8 +35,6 @@ class Aggregator(object):
         # training and validation data accumulates older iterations
         # images with green quota lower than 0.07 aren't further processed
         for gt_label in os.listdir(self.base_dir + self.label_dir):
-            if len(self.agg_list) > 1000:
-                break
             self.agg_list.append({self.k_img_name: gt_label, self.k_precision: -1.0, self.k_recall: -1.0,
                                   self.k_pr: -1.0, self.k_dag_it: 200,
                                   self.k_quota_g: -1.0})
@@ -105,6 +103,7 @@ class Aggregator(object):
             train = self.agg_list[:self.len_train_set]
             num_images_found = len(train)
         # training worst inference results to trainings list for the next dagger iteration
+        stopping_idx = 0
         for i in range(num_images_found,
                        len(self.agg_list)):
             # aggregate worst data of inference of last iteration
@@ -116,6 +115,7 @@ class Aggregator(object):
             if num_images_found >= self.num_imgs_to_train:
                 print('%d images for next DAgger Iteration found at index %d of total images %d\n\n'
                       % (self.num_imgs_to_train, i, len(self.agg_list)))
+                stopping_idx = i
                 break
             if i == len(self.agg_list)-1:
                 print('Stopping DAgger because no new Data could be aggregated.\nCreate more!')
@@ -125,6 +125,7 @@ class Aggregator(object):
                 break
         # shuffle this list ans split into training and validation
         shuffle(train)
+        print(i, stopping_idx)
         return train[:int(len(train) * self.train_perc)], train[int(len(train) * self.train_perc):], i
 
     def save_list(self, list_to_save = None, name = None):

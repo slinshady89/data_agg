@@ -22,7 +22,7 @@ class Trainer(object):
         self.dag_dir = 'dagger/'
         self.log_dir = 'log/'
         self.optimizer = 'adagrad'
-        self.gpu_num = '0,1,2'  # '1'
+        self.gpu_num = '0'  # '1'
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = self.gpu_num
         self.untrained = 'store_true'
@@ -182,3 +182,5 @@ class Trainer(object):
 
             cv2.imwrite(path + name, out * 255)
 
+    def finish(self):
+        K.clear_session()
