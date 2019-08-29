@@ -58,10 +58,10 @@ def main(args):
             KTF.set_learning_phase(1)
 
             trainer = Trainer(_train_list = train, _val_list = val, _inf_list = aggregator.agg_list[idx_eval:])
-            trainer.epoch_steps = 150
-            trainer.val_steps = 40
-            trainer.batch_size = 4
-            trainer.n_epochs = 1
+            trainer.epoch_steps = 250
+            trainer.val_steps = 50
+            trainer.batch_size = 6
+            trainer.n_epochs = 10
             trainer.dag_it = aggregator.dag_it_num
             # trains model for defined number of epochs with the actual dataset
             trainer.train()

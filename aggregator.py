@@ -84,6 +84,7 @@ class Aggregator(object):
         self.create_working_dir(os.path.join(self.dag_dir))
         self.create_working_dir(os.path.join(self.dag_dir + '%02d' % self.dag_it_num))
         self.create_working_dir(os.path.join(self.dag_dir + '%02d/inf/' % self.dag_it_num))
+        self.create_working_dir(os.path.join(self.dag_dir + '%02d/log/' % self.dag_it_num))
         self.agg_list_name = self.base_dir + self.dag_dir + '%02d/' % self.dag_it_num \
                              + 'agg_list_%02d.json' % self.dag_it_num
         self.num_imgs_to_train = self.len_train_batch + self.len_val_batch + \
