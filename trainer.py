@@ -121,7 +121,7 @@ class Trainer(object):
             labels = []
             for i in ix:
                 # images
-                image_name = lists[i]  # os.path.join("%06d" % i)
+                image_name = lists[i]['name']  # os.path.join("%06d" % i)
                 original_img = cv2.imread(self.base_dir + self.img_dir + image_name)
                 # masks
                 original_mask = cv2.imread(self.base_dir + self.label_dir + image_name)
@@ -169,10 +169,9 @@ class Trainer(object):
 
     def predict(self):
         path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it + self.inf_dir
-        print(path)
         for name in self.inf_list:
             imgs = []
-            img = cv2.imread(self.base_dir + self.img_dir + name)
+            img = cv2.imread(self.base_dir + self.img_dir + name['name'])
 
             imgs.append(self.crop_resize_norm_bgr(img, self.input_shape))
             imgs = np.array(imgs)
@@ -180,7 +179,7 @@ class Trainer(object):
             inference = self.multi_model.predict(imgs)
             out = cv2.resize(inference[0], (1024, 256))
 
-            cv2.imwrite(path + name, out * 255)
+            cv2.imwrite(path + name['name'], out * 255)
 
     def finish(self):
         K.clear_session()

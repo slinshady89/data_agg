@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 
 from diagnostics import preprocess_inference, recall_rgb, precision_rgb, colour_quota_rgb
+from aggregator import Keys
 
 
 ## Evaluator for inferences of KITTI data structure
@@ -16,11 +17,16 @@ class Evaluator(object):
         self.gt_label_dir_ = _gt_label_dir
         self.eval_list = _eval_list
         self.threshold_ = np.array((69, 75, 110), dtype = np.int)
+        self.keys = Keys()
 
     def process_image(self, i):
-        img_name = self.base_dir_ + self.inf_label_dir_ + self.eval_list[i]
+        img_name = self.base_dir_ + self.inf_label_dir_ + self.eval_list[i][self.keys.name]
         inf_label = cv2.imread(img_name)
-        gt_label = cv2.imread(self.base_dir_ + self.gt_label_dir_ + self.eval_list[i])
+        gt_label = cv2.imread(self.base_dir_ + self.gt_label_dir_ + self.eval_list[i][self.keys.name])
+        # print(i)
+        if inf_label is None:
+            print(i, self.eval_list[i][self.keys.name])
+            return 0
         inf_label = cv2.resize(inf_label, (1024, 256))
 
         h, w, _ = gt_label.shape
@@ -36,26 +42,18 @@ class Evaluator(object):
         recall = recall_rgb(gt_label, inf_label_proc)
         precision = precision_rgb(gt_label, inf_label_proc)
 
-        prec_rec_qut = [[precision[0], recall[0], quota_gt[0]],  # blue channel
-                        [precision[1], recall[1], quota_gt[1]],  # green channel
-                        [precision[2], recall[2], quota_gt[2]]]  # red channel
+        prec_rec_qut = np.array([[precision[0], recall[0], quota_gt[0]],  # blue channel
+                                 [precision[1], recall[1], quota_gt[1]],  # green channel
+                                 [precision[2], recall[2], quota_gt[2]]])  # red channel
         return prec_rec_qut
 
     def process_batch(self, q, begin, batch_size):
-        # if begin + 1 + batch_size >= len(self.eval_list):
-        #     print(begin)
-        #     print(batch_size)
-        #     batch_size = len(self.eval_list) - begin - 1
+        if begin + batch_size >= len(self.eval_list):
+            print(begin)
+            print(batch_size)
+            batch_size = len(self.eval_list) - begin - 1
         prq = np.zeros((batch_size, 3, 3), dtype = np.float)
-        # if begin > 700:
-        #     print(prq.shape)
-        for i in range(batch_size):
-            prq[i] = self.process_image(i)
+        for i in range(begin, begin + batch_size):
+            prq[i - begin] = self.process_image(i)
         q.put(prq)
-
-    # def process_one_batch(self, begin, batch_size):
-    #     prq = np.zeros((len(batch_size), 3, 3), dtype = np.float)
-    #     for i in range(len(batch_size)):
-    #         prq[i] = self.process_image(i)
-    #     q.put(prq)
 

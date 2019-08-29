@@ -5,8 +5,20 @@ from random import shuffle, randint
 from operator import itemgetter
 
 
+class Keys(object):
+    def __init__(self):
+        self.name = 'name'
+        self.precision = 'prec'
+        self.recall = 'rec'
+        self.quota_g = 'quota_green_gt'
+        # evaluation metric
+        self.pr = 'precision_times_recall'
+        self.dag_it = 'dagger_iteration'
+
+
 class Aggregator(object):
     def __init__(self):
+        self.__keys = Keys()
         self.dag_it_num = 0
         self.dag_done = False
         self.base_dir = '/media/localadmin/BigBerta/11Nils/kitti/dataset/sequences/Data/'
@@ -14,14 +26,13 @@ class Aggregator(object):
         self.label_dir = 'labels/'
         self.inf_dir = 'inf/'
         self.dag_dir = 'dagger/'
-        self.k_img_name = 'name'
-        self.k_sequence = 'seq'
-        self.k_precision = 'prec'
-        self.k_recall = 'rec'
-        self.k_quota_g = 'quota_green_gt'
+        self.k_img_name = self.__keys.name
+        self.k_precision = self.__keys.precision
+        self.k_recall = self.__keys.recall
+        self.k_quota_g = self.__keys.quota_g
         # evaluation metric
-        self.k_pr = 'precision_times_recall'
-        self.k_dag_it = 'dagger_iteration'
+        self.k_pr = self.__keys.pr
+        self.k_dag_it = self.__keys.dag_it
         # self.k_training = 'training_data'
         # self.k_valid = 'validation_data'
         self.train_perc = 0.8
