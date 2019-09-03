@@ -158,6 +158,7 @@ class Trainer(object):
         return array_mask
 
     def train(self):
+        path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it + self.inf_dir
         history = self.multi_model.fit_generator(generator = self.data_gen(self.train_list),
                                                  steps_per_epoch = self.epoch_steps,
                                                  epochs = self.n_epochs,

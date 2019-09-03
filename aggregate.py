@@ -43,13 +43,6 @@ def main(args):
 
         print(len(aggregator.agg_list[idx_eval:]))
 
-        train_list = [elem[aggregator.k_img_name] for elem in train]
-        val_list = [elem[aggregator.k_img_name] for elem in val]
-        inf_list = [elem[aggregator.k_img_name] for elem in aggregator.agg_list[idx_eval:]]
-
-        print('len inf list %d' % len(inf_list))
-        print('batch * threads %d' % (batch_size * num_max_threads))
-
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = '0'
         with tf.Graph().as_default():
@@ -68,11 +61,6 @@ def main(args):
             # safes inferences of images that are unseen by the net
             trainer.predict()
             session.close()
-            # del train_list
-            # del val_list
-            # del trainer.model
-            # del trainer.multi_model
-            # gc.collect()
 
         print('\nInference done!\n')
 
@@ -84,11 +72,7 @@ def main(args):
         jobs = []
         q = multiprocessing.Queue()
 
-        prq = np.zeros((len(inf_list), 3), dtype = np.float)
-        l = 0
         for k in range(idx_eval, idx_eval + batch_size * num_max_threads, batch_size):
-            print('Starting %d-th Process at Index %d with batch_size %d' % (l, k, batch_size))
-            l += 1
             p = multiprocessing.Process(target = evaluator.process_batch, args = (q, k, batch_size))
             jobs.append([p, k])
             p.start()
@@ -105,7 +89,6 @@ def main(args):
                 # prq[job[1]:job[1] + rets.shape[0]] = rets[:, 1, :]
             except ValueError as e:
                 print(job[1])
-                print(prq.shape[0] - job[1], rets.shape[0])
 
         for job in jobs:
             job[0].join()

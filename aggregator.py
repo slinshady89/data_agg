@@ -115,7 +115,7 @@ class Aggregator(object):
             train = self.agg_list[:self.len_train_set]
             num_images_found = len(train)
         # training worst inference results to trainings list for the next dagger iteration
-        stopping_idx = 0
+        stop_idx = 0
         for i in range(num_images_found,
                        len(self.agg_list)):
             # aggregate worst data of inference of last iteration
@@ -127,7 +127,7 @@ class Aggregator(object):
             if num_images_found >= self.num_imgs_to_train:
                 print('%d images for next DAgger Iteration found at index %d of total images %d\n\n'
                       % (self.num_imgs_to_train, i, len(self.agg_list)))
-                stopping_idx = i
+                stop_idx = i
                 break
             if i == len(self.agg_list)-1:
                 print('Stopping DAgger because no new Data could be aggregated.\nCreate more!')
@@ -137,8 +137,7 @@ class Aggregator(object):
                 break
         # shuffle this list ans split into training and validation
         shuffle(train)
-        print(i, stopping_idx)
-        return train[:int(len(train) * self.train_perc)], train[int(len(train) * self.train_perc):], i
+        return train[:int(len(train) * self.train_perc)], train[int(len(train) * self.train_perc):], stop_idx
 
     def save_list(self, list_to_save = None, name = None):
         if list_to_save is None:
