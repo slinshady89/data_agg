@@ -1,7 +1,4 @@
-import multiprocessing
 import os
-import gc
-import numpy as np
 import tensorflow as tf
 import keras.backend.tensorflow_backend as KTF
 
@@ -19,29 +16,24 @@ def main(args):
         print('\nDAgger Iteration: %d\n' % aggregator.dag_it_num)
         aggregator.on_new_iter()
 
-        if aggregator.dag_done:
+        train, val, idx_eval = aggregator.get_training_data()
+        inf_dir = aggregator.dag_dir + '%02d/inf/' % aggregator.dag_it_num
+        evaluator = Evaluator(aggregator.base_dir, inf_dir, aggregator.label_dir,
+                              _agg_list = aggregator.agg_list)
+
+        evaluator.estimate_batch_size(len(aggregator.agg_list[idx_eval:]))
+
+        print('Evaluating %d images in %d threads' % (evaluator.batch_size, evaluator.num_max_threads))
+
+        if aggregator.dag_done or evaluator.stop_dagger:
             print('DAgger stopped!')
             break
-
-        train, val, idx_eval = aggregator.get_training_data()
-
-        num_max_threads = 40
-        batch_size = (len(aggregator.agg_list[idx_eval:])) // num_max_threads
-
-        # if batch_size == 0 a last learning process could be useful as far as enough data for training
-        # is aggregated but unfortunately less than 40 images for evaluation should be considered
-        # as a stopping condition
-        if batch_size is 0:
-            print('\nStopping DAgger in Iteration: %d\n' % aggregator.dag_it_num)
-            print('\nOnly %d Images for Evaluation remaining.\n' % (len(aggregator.agg_list) - idx_eval))
-            break
-        print('Evaluating %d images in %d threads' % (batch_size, num_max_threads))
 
         aggregator.save_list(train, 'train')
         aggregator.save_list(val, 'val')
         aggregator.save_list(aggregator.agg_list[idx_eval:], 'eval')
 
-        print(len(aggregator.agg_list[idx_eval:]))
+        # Training and Prediction
 
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = '0'
@@ -50,11 +42,13 @@ def main(args):
             KTF.set_session(session)
             KTF.set_learning_phase(1)
 
-            trainer = Trainer(_train_list = train, _val_list = val, _inf_list = aggregator.agg_list[idx_eval:])
+            trainer = Trainer(_train_list = train,
+                              _val_list = val,
+                              _inf_list = aggregator.agg_list[idx_eval:])
             trainer.epoch_steps = 250
             trainer.val_steps = 50
             trainer.batch_size = 6
-            trainer.n_epochs = 10
+            trainer.n_epochs = 25
             trainer.dag_it = aggregator.dag_it_num
             # trains model for defined number of epochs with the actual dataset
             trainer.train()
@@ -64,47 +58,20 @@ def main(args):
 
         print('\nInference done!\n')
 
-        inf_dir = aggregator.dag_dir + '%02d/inf/' % aggregator.dag_it_num
+        # Training and prediction done
 
-        evaluator = Evaluator(aggregator.base_dir, inf_dir, aggregator.label_dir,
-                              _eval_list = aggregator.agg_list)
+        # Evaluation
 
-        jobs = []
-        q = multiprocessing.Queue()
+        aggregator.agg_list = evaluator.process_prediction(agg_chunk = aggregator.agg_list,
+                                                           idx_eval = idx_eval)
 
-        for k in range(idx_eval, idx_eval + batch_size * num_max_threads, batch_size):
-            p = multiprocessing.Process(target = evaluator.process_batch, args = (q, k, batch_size))
-            jobs.append([p, k])
-            p.start()
-
-        # evaluate the first num_max_threads * batch_size images with multiprocessing
-        for l, job in enumerate(jobs):
-            rets = q.get()
-            try:
-                for idx, ret in enumerate(rets[:, 1]):
-                    aggregator.agg_list[job[1] + idx][aggregator.k_precision] = ret[0]
-                    aggregator.agg_list[job[1] + idx][aggregator.k_recall] = ret[1]
-                    aggregator.agg_list[job[1] + idx][aggregator.k_pr] = ret[0] * ret[1]
-                    aggregator.agg_list[job[1] + idx][aggregator.k_quota_g] = ret[2]
-                # prq[job[1]:job[1] + rets.shape[0]] = rets[:, 1, :]
-            except ValueError as e:
-                print(job[1])
-
-        for job in jobs:
-            job[0].join()
-
-        print('Evaluationg rest of images from %d to %d' % (idx_eval + num_max_threads * batch_size,
-                                                            len(aggregator.agg_list)))
-        # evaluate images that doesn't fit into multi processing batches
-        for k in range(idx_eval + num_max_threads * batch_size, len(aggregator.agg_list)):
-            chunk = evaluator.process_image(k)
-            aggregator.agg_list[k][aggregator.k_precision] = chunk[1, 0]
-            aggregator.agg_list[k][aggregator.k_recall] = chunk[1, 1]
-            aggregator.agg_list[k][aggregator.k_pr] = chunk[1, 0] * chunk[1, 1]
-            aggregator.agg_list[k][aggregator.k_quota_g] = chunk[1, 2]
+        # Evaluation done and saved for next iteration
 
         aggregator.save_list()
         aggregator.aggregate()
+
+
+
 
 
 if __name__ == "__main__":
