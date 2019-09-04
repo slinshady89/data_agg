@@ -1,7 +1,6 @@
 import json
 import os
-from math import inf
-from random import shuffle, randint
+from random import shuffle
 from operator import itemgetter
 
 
@@ -12,7 +11,7 @@ class Keys(object):
         self.recall = 'rec'
         self.quota_g = 'quota_green_gt'
         # evaluation metric
-        self.pr = 'precision_times_recall'
+        self.f1score = 'precision_times_recall'
         self.dag_it = 'dagger_iteration'
 
 
@@ -30,8 +29,9 @@ class Aggregator(object):
         self.k_precision = self.__keys.precision
         self.k_recall = self.__keys.recall
         self.k_quota_g = self.__keys.quota_g
+        self.quota_g_min = 0.01
         # evaluation metric
-        self.k_pr = self.__keys.pr
+        self.k_f1score = self.__keys.f1score
         self.k_dag_it = self.__keys.dag_it
         # self.k_training = 'training_data'
         # self.k_valid = 'validation_data'
@@ -44,10 +44,10 @@ class Aggregator(object):
         # add a dictionary entry for every label image in label_dir with initial values for evaluation metrics
         # and key values if they belong to training or validation data of which DAgger iteration
         # training and validation data accumulates older iterations
-        # images with green quota lower than 0.07 aren't further processed
+        # images with green quota lower than quota_g_min aren't further processed
         for gt_label in os.listdir(self.base_dir + self.label_dir):
             self.agg_list.append({self.k_img_name: gt_label, self.k_precision: -1.0, self.k_recall: -1.0,
-                                  self.k_pr: -1.0, self.k_dag_it: 200,
+                                  self.k_f1score: -1.0, self.k_dag_it: 200,
                                   self.k_quota_g: -1.0})
 
         self.len_agg_list = len(self.agg_list)
@@ -59,9 +59,9 @@ class Aggregator(object):
         self.len_train_set = self.len_train_batch + self.len_val_batch
         self.len_agg_set = self.len_agg_train + self.len_agg_val
         self.num_imgs_to_train = self.len_train_set + self.len_agg_set * self.dag_it_num
-
+        self.on_new_iter()
         with open(self.agg_list_name, "w") as f:
-            json.dump(self.agg_list, f)
+            json.dump(self.agg_list, f, sort_keys = True)
         f.close()
         for i in range(self.len_train_set):
             self.agg_list[i][self.k_dag_it] = 0
@@ -98,10 +98,10 @@ class Aggregator(object):
         if list_to_sort is None:
             # self.agg_list = sorted(sorted(self.agg_list, key = itemgetter(self.k_dag_it), reverse = False),
             #                        key = itemgetter(self.k_pr), reverse = False)
-            self.agg_list = sorted(self.agg_list, key = itemgetter(self.k_dag_it, self.k_pr), reverse = False)
+            self.agg_list = sorted(self.agg_list, key = itemgetter(self.k_dag_it, self.k_f1score), reverse = False)
             self.save_list()
         else:
-            return sorted(list_to_sort, key = itemgetter(self.k_dag_it, self.k_pr), reverse = False)
+            return sorted(list_to_sort, key = itemgetter(self.k_dag_it, self.k_f1score), reverse = False)
 
     def get_training_data(self):
         # shuffle data
@@ -119,7 +119,7 @@ class Aggregator(object):
         for i in range(num_images_found,
                        len(self.agg_list)):
             # aggregate worst data of inference of last iteration
-            if self.agg_list[i][self.k_quota_g] >= 0.07 and num_images_found < self.num_imgs_to_train:
+            if self.agg_list[i][self.k_quota_g] >= self.quota_g_min and num_images_found < self.num_imgs_to_train:
                 self.agg_list[i][self.k_dag_it] = self.dag_it_num
                 train.append(self.agg_list[i])
                 num_images_found += 1
