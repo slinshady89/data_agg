@@ -31,7 +31,6 @@ def main(args):
 
         aggregator.save_list(train, 'train')
         aggregator.save_list(val, 'val')
-        aggregator.save_list(aggregator.agg_list[idx_eval:], 'eval')
 
         # Training and Prediction
 
@@ -45,33 +44,33 @@ def main(args):
             trainer = Trainer(_train_list = train,
                               _val_list = val,
                               _inf_list = aggregator.agg_list[idx_eval:])
-            trainer.epoch_steps = 250
-            trainer.val_steps = 50
-            trainer.batch_size = 6
+            trainer.epoch_steps = 500
+            trainer.val_steps = 100
+            trainer.batch_size = 8
             trainer.n_epochs = 25
             trainer.dag_it = aggregator.dag_it_num
+            trainer.update_callback()
             # trains model for defined number of epochs with the actual dataset
             trainer.train()
+            print('\nTraining done!\nStarting Prediction\n')
             # safes inferences of images that are unseen by the net
             trainer.predict()
             session.close()
 
         print('\nInference done!\n')
-
+        print('Evaluating %d images' % len(aggregator.agg_list[idx_eval:]))
         # Training and prediction done
 
         # Evaluation
 
         aggregator.agg_list = evaluator.process_prediction(agg_chunk = aggregator.agg_list,
                                                            idx_eval = idx_eval)
-
+        aggregator.save_list(aggregator.agg_list[idx_eval:], 'eval')
         # Evaluation done and saved for next iteration
 
+        # save full aggregation list with all information of all iterations until this in iteration's folder
         aggregator.save_list()
-        aggregator.aggregate()
-
-
-
+        aggregator.prepare_next_it()
 
 
 if __name__ == "__main__":
@@ -80,4 +79,4 @@ if __name__ == "__main__":
         main(args)
         print("\nFinished without interrupt. \n\nGoodbye!")
     except KeyboardInterrupt:
-        print("\n Cancelled by user. \n\nGoodbye!")
+        print("\nCancelled by user. \n\nGoodbye!")

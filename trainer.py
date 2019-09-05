@@ -47,70 +47,10 @@ class Trainer(object):
 
         self.std = [0.32636853, 0.31895106, 0.30716496]
         self.mean = [0.39061851, 0.38151629, 0.3547171]
-
-        self.path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it + self.log_dir
-        print('saving weights in %s' % self.path)
-        # set callbacks
-        self.cp_cb = ModelCheckpoint(
-            filepath = self.path + '/weights{epoch:02d}.hdf5',
-            # filepath = path + '/weights{val_loss:02d}.hdf5',
-            monitor = 'val_loss',
-            verbose = 1,
-            save_best_only = True,
-            mode = 'auto',
-            period = 1)
-        self.es_cb = EarlyStopping(
-            monitor = 'val_loss',
-            patience = 3,
-            verbose = 1,
-            mode = 'auto')
-        self.tb_cb = TensorBoard(
-            log_dir = self.path,
-            write_images = True)
-
-    def iou_loss_core(self, true, pred):  # this can be used as a loss if you make it negative
-        intersection = true * pred
-        notTrue = 1 - true
-        union = true + (notTrue * pred)
-        return (K.sum(intersection, axis = -1) + K.epsilon()) / (K.sum(union, axis = -1) + K.epsilon())
-
-    def iou_loss(self, y_true, y_pred, channel = 0, smooth = 1.0):
-        """
-        Jaccard = (|X & Y|)/ (|X|+ |Y| - |X & Y|)
-                = sum(|A*B|)/(sum(|A|)+sum(|B|)-sum(|A*B|))
-
-        The jaccard distance loss is usefull for unbalanced datasets. This has been
-        shifted so it converges on 0 and is smoothed to avoid exploding or disapearing
-        gradient.
-
-        Ref: https://en.wikipedia.org/wiki/Jaccard_index
-
-        @url: https://gist.github.com/wassname/f1452b748efcbeb4cb9b1d059dce6f96
-        @author: wassname
-        """
-        intersection = K.sum(K.abs(y_true[:, :, :, channel] * y_pred[:, :, :, channel]), axis = -1)
-        sum_ = K.sum(K.abs(y_true[:, :, :, channel]) + K.abs(y_pred[:, :, :, channel]), axis = -1)
-        jac = intersection / sum_  # (sum_ - intersection)
-        return (1 - jac) * smooth
-
-    def iou_metric(self, y_true, y_pred, channel = 0):
-        intersection = K.sum(K.abs(y_true[:, :, :, channel] * y_pred[:, :, :, channel]), axis = -1)
-        sum_ = K.sum(K.abs(y_true[:, :, :, channel]) + K.abs(y_pred[:, :, :, channel]), axis = -1)
-        iou = intersection / (sum_ - intersection)
-        return iou
-
-    def channelwise_IoU(self, true, pred):
-        b = self.iou_metric(true, pred, 0)
-        g = self.iou_metric(true, pred, 1)
-        r = self.iou_metric(true, pred, 2)
-        return (b + g + r) / 3.0
-
-    def custom_loss(self, true, pred):
-        b = self.iou_loss(true, pred, 0)
-        g = self.iou_loss(true, pred, 1)
-        r = self.iou_loss(true, pred, 2)
-        return b + g + r
-        # return K.sqrt(K.square(g) + 0.25 * K.square(b) + 0.25 * K.square(r))
+        self.log_dir = []
+        self.es_cb = []
+        self.tb_cb = []
+        self.cp_cb = []
 
     # generator that we will use to read the data from the directory
     def data_gen(self, lists):
@@ -158,7 +98,6 @@ class Trainer(object):
         return array_mask
 
     def train(self):
-        path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it + self.inf_dir
         history = self.multi_model.fit_generator(generator = self.data_gen(self.train_list),
                                                  steps_per_epoch = self.epoch_steps,
                                                  epochs = self.n_epochs,
@@ -170,7 +109,7 @@ class Trainer(object):
 
     def predict(self):
         path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it + self.inf_dir
-        for name in self.inf_list:
+        for i, name in enumerate(self.inf_list):
             imgs = []
             img = cv2.imread(self.base_dir + self.img_dir + name['name'])
 
@@ -180,7 +119,29 @@ class Trainer(object):
             inference = self.multi_model.predict(imgs)
             out = cv2.resize(inference[0], (1024, 256))
 
+            print('\r\033[1A\033[0KInference done on %d of %d Images' % (i, len(self.inf_list)))
             cv2.imwrite(path + name['name'], out * 255)
 
     def finish(self):
         K.clear_session()
+
+    def update_callback(self):
+        self.log_dir = self.base_dir + self.dag_dir + '%02d/' % self.dag_it + self.log_dir
+        print('saving weights in %s' % self.log_dir)
+        # set callbacks
+        self.cp_cb = ModelCheckpoint(
+            filepath = self.log_dir + '/weights{epoch:02d}.hdf5',
+            # filepath = path + '/weights{val_loss:02d}.hdf5',
+            monitor = 'val_loss',
+            verbose = 1,
+            save_best_only = True,
+            mode = 'auto',
+            period = 1)
+        self.es_cb = EarlyStopping(
+            monitor = 'val_loss',
+            patience = 3,
+            verbose = 1,
+            mode = 'auto')
+        self.tb_cb = TensorBoard(
+            log_dir = self.log_dir,
+            write_images = True)

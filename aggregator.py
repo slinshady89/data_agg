@@ -90,9 +90,8 @@ class Aggregator(object):
         self.num_imgs_to_train = self.len_train_batch + self.len_val_batch + \
                                  (self.len_agg_train + self.len_agg_val) * self.dag_it_num
 
-    def aggregate(self):
+    def prepare_next_it(self):
         self.dag_it_num += 1
-        pass
 
     def sort_agg_list(self, list_to_sort = None):
         if list_to_sort is None:
@@ -118,7 +117,7 @@ class Aggregator(object):
         stop_idx = 0
         for i in range(num_images_found,
                        len(self.agg_list)):
-            # aggregate worst data of inference of last iteration
+            # prepare_next_it worst data of inference of last iteration
             if self.agg_list[i][self.k_quota_g] >= self.quota_g_min and num_images_found < self.num_imgs_to_train:
                 self.agg_list[i][self.k_dag_it] = self.dag_it_num
                 train.append(self.agg_list[i])
