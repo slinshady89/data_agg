@@ -26,6 +26,8 @@ def main(args):
         print('Evaluating %d images in %d threads' % (evaluator.batch_size, evaluator.num_max_threads))
 
         if aggregator.dag_done or evaluator.stop_dagger:
+            aggregator.save_list()
+
             print('DAgger stopped!')
             break
 
@@ -65,11 +67,14 @@ def main(args):
 
         aggregator.agg_list = evaluator.process_prediction(agg_chunk = aggregator.agg_list,
                                                            idx_eval = idx_eval)
+        print('Evaluation done. Saving evaluated data.')
         aggregator.save_list(aggregator.agg_list[idx_eval:], 'eval')
         # Evaluation done and saved for next iteration
 
         # save full aggregation list with all information of all iterations until this in iteration's folder
         aggregator.save_list()
+        # delete all images of inference step to save space on the drive
+        aggregator.delete_inf()
         aggregator.prepare_next_it()
 
 

@@ -80,6 +80,14 @@ class Aggregator(object):
                 print('OSError: %s', e)
         return path
 
+    def delete_inf(self):
+        dir_name = self.base_dir + self.dag_dir + '%02d/' % self.dag_it_num + self.inf_dir
+        for file in os.listdir(dir_name):
+            file_path = os.path.join(dir_name, file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        os.rmdir(dir_name)
+
     def on_new_iter(self):
         self.create_working_dir(os.path.join(self.dag_dir))
         self.create_working_dir(os.path.join(self.dag_dir + '%02d' % self.dag_it_num))
