@@ -47,7 +47,6 @@ class Trainer(object):
 
         self.std = [0.32636853, 0.31895106, 0.30716496]
         self.mean = [0.39061851, 0.38151629, 0.3547171]
-        self.log_dir = []
         self.es_cb = []
         self.tb_cb = []
         self.cp_cb = []
