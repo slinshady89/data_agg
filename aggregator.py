@@ -2,6 +2,7 @@ import json
 import os
 from random import shuffle
 from operator import itemgetter
+import numpy as np
 
 
 class Keys(object):
@@ -11,8 +12,9 @@ class Keys(object):
         self.recall = 'rec'
         self.quota_g = 'quota_green_gt'
         # evaluation metric
-        self.f1score = 'precision_times_recall'
+        self.f1score = 'metric'
         self.dag_it = 'dagger_iteration'
+        self.course = 'course_in_degree'
 
 
 class Aggregator(object):
@@ -25,10 +27,12 @@ class Aggregator(object):
         self.label_dir = 'labels/'
         self.inf_dir = 'inf/'
         self.dag_dir = 'dagger/'
+        self.poses_dir = 'poses/'
         self.k_img_name = self.__keys.name
         self.k_precision = self.__keys.precision
         self.k_recall = self.__keys.recall
         self.k_quota_g = self.__keys.quota_g
+        self.k_course = self.__keys.course
         self.quota_g_min = 0.01
         # evaluation metric
         self.k_f1score = self.__keys.f1score
@@ -46,9 +50,14 @@ class Aggregator(object):
         # training and validation data accumulates older iterations
         # images with green quota lower than quota_g_min aren't further processed
         for gt_label in os.listdir(self.base_dir + self.label_dir):
-            self.agg_list.append({self.k_img_name: gt_label, self.k_precision: -1.0, self.k_recall: -1.0,
-                                  self.k_f1score: -1.0, self.k_dag_it: 200,
-                                  self.k_quota_g: -1.0})
+            d_course = float(np.loadtxt(self.base_dir + self.poses_dir + gt_label.replace('.png', '.txt')))
+            self.agg_list.append({self.k_img_name: gt_label,
+                                  self.k_precision: -1.0,
+                                  self.k_recall: -1.0,
+                                  self.k_f1score: -1.0,
+                                  self.k_dag_it: 200,
+                                  self.k_quota_g: -1.0,
+                                  self.k_course: d_course})
 
         self.len_agg_list = len(self.agg_list)
         shuffle(self.agg_list)
@@ -103,8 +112,6 @@ class Aggregator(object):
 
     def sort_agg_list(self, list_to_sort = None):
         if list_to_sort is None:
-            # self.agg_list = sorted(sorted(self.agg_list, key = itemgetter(self.k_dag_it), reverse = False),
-            #                        key = itemgetter(self.k_pr), reverse = False)
             self.agg_list = sorted(self.agg_list, key = itemgetter(self.k_dag_it, self.k_f1score), reverse = False)
             self.save_list()
         else:
@@ -149,11 +156,11 @@ class Aggregator(object):
     def save_list(self, list_to_save = None, name = None):
         if list_to_save is None:
             with open(self.agg_list_name, "w") as f:
-                json.dump(self.agg_list, f)
+                json.dump(self.agg_list, f, sort_keys = True)
         else:
             path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it_num + name + '_%02d' % self.dag_it_num + '.json'
             with open(path, "w") as f:
-                json.dump(list_to_save, f)
+                json.dump(list_to_save, f, sort_keys = True)
         f.close()
 
     def load_list(self, list_to_load = None, name = None):
@@ -162,7 +169,7 @@ class Aggregator(object):
                 list_chunk = json.load(f)
         else:
             path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it_num + name + '_%02d' % self.dag_it_num + '.json'
-            with open(path, "w") as f:
+            with open(path, "r") as f:
                 list_chunk = json.load(f)
         f.close()
         return list_chunk
