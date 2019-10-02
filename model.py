@@ -23,8 +23,8 @@ def unet(input_shape,
     # encoder
     conv_1 = Convolution2D(filters * 4, (kernel, kernel), padding = "same")(inputs)
     conv_1 = BatchNormalization()(conv_1)
-    # conv_1 = Dropout(0.5)(conv_1)
     conv_1 = Activation(activation)(conv_1)
+    # conv_1 = Dropout(0.5)(conv_1)
     conv_2 = Convolution2D(filters * 4, (kernel, kernel), padding = "same")(conv_1)
     conv_2 = BatchNormalization()(conv_2)
     conv_2 = Activation(activation)(conv_2)

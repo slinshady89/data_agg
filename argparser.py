@@ -6,7 +6,7 @@ def argparser():
     parser = argparse.ArgumentParser(description = 'Segmentation U-Net inference. '
                                                    'Predicting drivable paths in input images and highlight obstacles')
     parser.add_argument("--base_dir",
-                        default = '/media/localadmin/BigBerta/11Nils/kitti/dataset/sequences/Data/',
+                        default = '/media/localadmin/Test/11Nils/kitti/dataset/sequences/Data/',
                         help = "base dir where labels are found")
     parser.add_argument("--sequence",
                         default = '08/',

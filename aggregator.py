@@ -22,7 +22,7 @@ class Aggregator(object):
         self.__keys = Keys()
         self.dag_it_num = 0
         self.dag_done = False
-        self.base_dir = '/media/localadmin/BigBerta/11Nils/kitti/dataset/sequences/Data/'
+        self.base_dir = '/media/localadmin/Test/11Nils/kitti/dataset/sequences/Data/'
         self.img_dir = 'images/'
         self.label_dir = 'labels/'
         self.inf_dir = 'inf/'

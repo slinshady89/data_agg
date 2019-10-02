@@ -15,7 +15,7 @@ class Trainer(object):
         self.train_list = _train_list
         self.val_list = _val_list
         self.inf_list = _inf_list
-        self.base_dir = '/media/localadmin/BigBerta/11Nils/kitti/dataset/sequences/Data/'
+        self.base_dir = '/media/localadmin/Test/11Nils/kitti/dataset/sequences/Data/'
         self.img_dir = 'images/'
         self.label_dir = 'labels/'
         self.inf_dir = 'inf/'
