@@ -3,7 +3,7 @@ import os
 import numpy as np
 from model import unet
 from keras.preprocessing.image import img_to_array
-from keras.utils import multi_gpu_model
+from keras.utils import multi_gpu_model, plot_model
 from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
 import keras.backend as K
 
@@ -19,6 +19,7 @@ class Trainer(object):
         self.img_dir = 'images/'
         self.label_dir = 'labels/'
         self.inf_dir = 'inf/'
+        self.test_inf_dir = 'inf_08/'
         self.dag_dir = 'dagger/'
         self.log_dir = 'log/'
         self.optimizer = 'adagrad'
@@ -44,6 +45,7 @@ class Trainer(object):
         else:
             self.multi_model = self.model
         self.multi_model.compile(loss = self.loss, optimizer = self.optimizer, metrics = ['accuracy'])
+        plot_model(model = self.multi_model, to_file = self.base_dir + 'model.png')
 
         self.std = [0.32636853, 0.31895106, 0.30716496]
         self.mean = [0.39061851, 0.38151629, 0.3547171]
@@ -64,6 +66,8 @@ class Trainer(object):
                 original_img = cv2.imread(self.base_dir + self.img_dir + image_name)
                 # masks
                 original_mask = cv2.imread(self.base_dir + self.label_dir + image_name)
+                if original_mask is None:
+                    print(self.base_dir + self.label_dir + image_name)
                 array_img = self.crop_resize_norm_bgr(original_img, self.input_shape)
                 array_mask = self.crop_resive_mask(original_mask, self.input_shape)
                 imgs.append(array_img)
@@ -108,6 +112,7 @@ class Trainer(object):
 
     def predict(self):
         path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it + self.inf_dir
+        print('\nPredicting for DAgger\n')
         for i, name in enumerate(self.inf_list):
             imgs = []
             img = cv2.imread(self.base_dir + self.img_dir + name['name'])
@@ -120,6 +125,26 @@ class Trainer(object):
 
             print('\r\033[1A\033[0KInference done on %d of %d Images' % (i, len(self.inf_list)))
             cv2.imwrite(path + name['name'], out * 255)
+        print('\nPredicting on test sequence 08\n')
+        path_to_8th_seq = '/media/localadmin/Test/11Nils/kitti/dataset/sequences/08/image_2/'
+        path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it + self.test_inf_dir
+        img_list = sorted(os.listdir(path_to_8th_seq))
+        for i, name in enumerate(img_list):
+            imgs = []
+            img = cv2.imread(path_to_8th_seq + name)
+            if img is None:
+                print(name)
+                break
+            imgs.append(self.crop_resize_norm_bgr(img, self.input_shape))
+            imgs = np.array(imgs)
+
+            inference = self.multi_model.predict(imgs)
+            out = cv2.resize(inference[0], (1024, 256))
+
+            print('\r\033[1A\033[0KTesting inference done on %d of %d Images' % (i, len(img_list)-1))
+            cv2.imwrite(path + name, out * 255)
+
+
 
     def finish(self):
         K.clear_session()

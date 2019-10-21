@@ -18,16 +18,22 @@ class Keys(object):
 
 
 class Aggregator(object):
-    def __init__(self):
+    def __init__(self,
+                 _base_dir = '/media/localadmin/Test/11Nils/kitti/dataset/sequences/Data/',
+                 _img_dir = 'images/',
+                 _label_dir = 'labels/',
+                 _inf_dir = 'inf/',
+                 _dag_dir = 'dagger/',
+                 _poses_dir = 'poses/'):
         self.__keys = Keys()
         self.dag_it_num = 0
         self.dag_done = False
-        self.base_dir = '/media/localadmin/Test/11Nils/kitti/dataset/sequences/Data/'
-        self.img_dir = 'images/'
-        self.label_dir = 'labels/'
-        self.inf_dir = 'inf/'
-        self.dag_dir = 'dagger/'
-        self.poses_dir = 'poses/'
+        self.base_dir = _base_dir
+        self.img_dir = _img_dir
+        self.label_dir = _label_dir
+        self.inf_dir = _inf_dir
+        self.dag_dir = _dag_dir
+        self.poses_dir = _poses_dir
         self.k_img_name = self.__keys.name
         self.k_precision = self.__keys.precision
         self.k_recall = self.__keys.recall
@@ -101,6 +107,7 @@ class Aggregator(object):
         self.create_working_dir(os.path.join(self.dag_dir))
         self.create_working_dir(os.path.join(self.dag_dir + '%02d' % self.dag_it_num))
         self.create_working_dir(os.path.join(self.dag_dir + '%02d/inf/' % self.dag_it_num))
+        self.create_working_dir(os.path.join(self.dag_dir + '%02d/inf_08/' % self.dag_it_num))
         self.create_working_dir(os.path.join(self.dag_dir + '%02d/log/' % self.dag_it_num))
         self.agg_list_name = self.base_dir + self.dag_dir + '%02d/' % self.dag_it_num \
                              + 'agg_list_%02d.json' % self.dag_it_num

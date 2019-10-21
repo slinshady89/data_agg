@@ -1,7 +1,6 @@
 import os
 import tensorflow as tf
 import keras.backend.tensorflow_backend as KTF
-
 from argparser import argparser
 from aggregator import Aggregator
 from trainer import Trainer
@@ -9,7 +8,12 @@ from evaluator import Evaluator
 
 
 def main(args):
-    aggregator = Aggregator()
+    aggregator = Aggregator(_base_dir = args.base_dir,
+                            _img_dir = args.img_dir,
+                            _label_dir = args.label_dir,
+                            _inf_dir = args.inf_dir,
+                            _dag_dir = args.dag_dir,
+                            _poses_dir = args.poses_dir)
     print('Num of ground truth labeled images %d\n\n' % len(aggregator.agg_list))
 
     for i in range(0, 100):
@@ -47,8 +51,8 @@ def main(args):
                               _val_list = val,
                               _inf_list = aggregator.agg_list[idx_eval:])
             trainer.batch_size = 8
-            trainer.epoch_steps = 2 * len(train) // trainer.batch_size
-            trainer.val_steps = 2 * len(val) // trainer.batch_size
+            trainer.epoch_steps = len(train) // trainer.batch_size
+            trainer.val_steps = len(val) // trainer.batch_size
             trainer.n_epochs = 25
             trainer.dag_it = aggregator.dag_it_num
             trainer.update_callback()
