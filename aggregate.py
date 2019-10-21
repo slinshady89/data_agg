@@ -18,13 +18,16 @@ def main(args):
 
     for i in range(0, 100):
         print('\nDAgger Iteration: %d\n' % aggregator.dag_it_num)
+        # creates new directories each iteration
         aggregator.on_new_iter()
-
+        # returns the training, validation lists and knowledge of index at which index evaluation in agg_list starts
         train, val, idx_eval = aggregator.get_training_data()
+        # set directory to save predictions of inference
         inf_dir = aggregator.dag_dir + '%02d/inf/' % aggregator.dag_it_num
+        # initiates the evaluator
         evaluator = Evaluator(aggregator.base_dir, inf_dir, aggregator.label_dir,
                               _agg_list = aggregator.agg_list)
-
+        # estimating a batch each process should evaluate later to don't exceed a given process number
         evaluator.estimate_batch_size(len(aggregator.agg_list[idx_eval:]))
 
         print('Evaluating %d images in %d threads' % (evaluator.batch_size, evaluator.num_max_threads))
