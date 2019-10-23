@@ -4,7 +4,7 @@ from random import shuffle
 from operator import itemgetter
 import numpy as np
 
-
+# keys for the aggregation list
 class Keys(object):
     def __init__(self):
         self.name = 'name'
@@ -39,15 +39,17 @@ class Aggregator(object):
         self.k_recall = self.__keys.recall
         self.k_quota_g = self.__keys.quota_g
         self.k_course = self.__keys.course
+        # images with a less quota for green are never aggregated
         self.quota_g_min = 0.01
         # evaluation metric
         self.k_f1score = self.__keys.f1score
         self.k_dag_it = self.__keys.dag_it
-        # self.k_training = 'training_data'
-        # self.k_valid = 'validation_data'
+        # 80/20 split for training validation of training batch
         self.train_perc = 0.8
         self.val_perc = 0.2
-        self.train_batch_perc = 0.1  # 0.0005
+        # size of the first training batch
+        self.train_batch_perc = 0.1
+        # initialize the later aggregated batches with half the initial training batch size
         self.agg_batch_perc = self.train_batch_perc / 2
         self.agg_list_name = self.base_dir + self.dag_dir + 'agg_list.json'
         self.agg_list = []
@@ -67,6 +69,7 @@ class Aggregator(object):
 
         self.len_agg_list = len(self.agg_list)
         shuffle(self.agg_list)
+        # some parameters to estimate the length of the actual used batches to don't overshoot the dataset
         self.len_train_batch = int(self.len_agg_list * self.train_batch_perc * self.train_perc)
         self.len_val_batch = int(self.len_agg_list * self.train_batch_perc * self.val_perc)
         self.len_agg_train = self.len_train_batch // 2
@@ -95,6 +98,7 @@ class Aggregator(object):
                 print('OSError: %s', e)
         return path
 
+    # deleting inference on all evaluated data to save storage place on the drive
     def delete_inf(self):
         dir_name = self.base_dir + self.dag_dir + '%02d/' % self.dag_it_num + self.inf_dir
         for file in os.listdir(dir_name):
@@ -117,6 +121,7 @@ class Aggregator(object):
     def prepare_next_it(self):
         self.dag_it_num += 1
 
+    # sorting aggregation lists after iteration added to dagger and their evaluated score
     def sort_agg_list(self, list_to_sort = None):
         if list_to_sort is None:
             self.agg_list = sorted(self.agg_list, key = itemgetter(self.k_dag_it, self.k_f1score), reverse = False)
@@ -124,6 +129,8 @@ class Aggregator(object):
         else:
             return sorted(list_to_sort, key = itemgetter(self.k_dag_it, self.k_f1score), reverse = False)
 
+    # aggregates the worst results for training.
+    # ignores images with lower quota green than said
     def get_training_data(self):
         # shuffle data
         shuffle(self.agg_list)

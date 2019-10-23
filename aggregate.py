@@ -54,8 +54,8 @@ def main(args):
                               _val_list = val,
                               _inf_list = aggregator.agg_list[idx_eval:])
             trainer.batch_size = 8
-            trainer.epoch_steps = len(train) // trainer.batch_size
-            trainer.val_steps = len(val) // trainer.batch_size
+            trainer.epoch_steps = 500  # len(train) // trainer.batch_size
+            trainer.val_steps = 200  # len(val) // trainer.batch_size
             trainer.n_epochs = 25
             trainer.dag_it = aggregator.dag_it_num
             trainer.update_callback()

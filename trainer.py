@@ -38,6 +38,8 @@ class Trainer(object):
         self.n_epochs = _num_epochs
         self.batch_size = _batch_size
         self.filters = 8
+        # loads the specified model. any other could be used here
+        # then probably crop_and_resize in data_gen have to be applied, too!
         self.model = unet(self.input_shape, self.n_labels, self.filters, self.kernel, self.pool_size, self.output_mode)
         # print(self.model.summary())
         if len(self.gpu_num) >= 2:
@@ -46,8 +48,9 @@ class Trainer(object):
             self.multi_model = self.model
         self.multi_model.compile(loss = self.loss, optimizer = self.optimizer, metrics = ['accuracy'])
         plot_model(model = self.multi_model, to_file = self.base_dir + 'model.png')
-
+        # estimated standard deviation of each color value for KITTI
         self.std = [0.32636853, 0.31895106, 0.30716496]
+        # estimated mean deviation of each color value for KITTI
         self.mean = [0.39061851, 0.38151629, 0.3547171]
         self.es_cb = []
         self.tb_cb = []
@@ -76,6 +79,7 @@ class Trainer(object):
             labels = np.array(labels)
             yield imgs, labels
 
+    # crop and resize for unet. should be changed for different networks!
     def crop_resize_norm_bgr(self, img, dims):
         h, w, c = img.shape
         cropped_img = img[(h - 256):h, ((w - 1024) // 2): (w - (w - 1024) // 2)]
@@ -110,6 +114,8 @@ class Trainer(object):
                                                  callbacks = [self.cp_cb, self.es_cb, self.tb_cb])
         return history.epoch
 
+    # applies prediction on the to be evaluated data
+    # Additionally, applies a second inference on a given test dataset
     def predict(self):
         path = self.base_dir + self.dag_dir + '%02d/' % self.dag_it + self.inf_dir
         print('\nPredicting for DAgger\n')
