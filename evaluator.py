@@ -63,6 +63,7 @@ class Evaluator(object):
     def process_prediction(self, agg_chunk, idx_eval):
         jobs = []
         q = multiprocessing.Queue()
+        # starting num_max_threads threads each processing batch_size images
         for k in range(idx_eval, idx_eval + self.batch_size * self.num_max_threads, self.batch_size):
             p = multiprocessing.Process(target = self.process_batch, args = (q, k, self.batch_size))
             jobs.append([p, k])
@@ -78,6 +79,7 @@ class Evaluator(object):
                     agg_chunk[job[1] + batch_idx][self.keys_.quota_g] = prec_rec_quot[2]
             except ValueError as e:
                 print(job[1])
+        # wait until all threads are done to continue
         for job in jobs:
             job[0].join()
         print('Evaluationg rest of images from %d to %d' % (idx_eval + self.num_max_threads * self.batch_size,
