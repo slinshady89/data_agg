@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import multiprocessing
-from diagnostics import preprocess_inference, recall_rgb, precision_rgb, colour_quota_rgb
+from diagnostics import preprocess_inference, recall_rgb, precision_rgb, color_quota_rgb
 from aggregator import Keys
 
 
@@ -11,6 +11,7 @@ class Evaluator(object):
         self.inf_label_dir_ = _inf_label_dir
         self.gt_label_dir_ = _gt_label_dir
         self.agg_list_ = _agg_list
+        # threshold's estimated via the PoR-Curve
         self.threshold_ = np.array((69, 75, 110), dtype = np.int)
         self.keys_ = Keys()
         self.dag_it = 0
@@ -37,7 +38,7 @@ class Evaluator(object):
 
         inf_label_proc = preprocess_inference(inf = inf_label, threshold = self.threshold_)
 
-        quota_gt = colour_quota_rgb(gt_label)
+        quota_gt = color_quota_rgb(gt_label)
         recall = recall_rgb(gt_label, inf_label_proc)
         precision = precision_rgb(gt_label, inf_label_proc)
 

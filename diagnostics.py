@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 
 
+# calculating the IoU for only one color channel
 def iou_for_semantic_class(target_color_channel, inferenced_color_channel):
     intersection = np.logical_and(target_color_channel, inferenced_color_channel)
     union = np.logical_or(target_color_channel, inferenced_color_channel)
@@ -12,6 +13,7 @@ def iou_for_semantic_class(target_color_channel, inferenced_color_channel):
     return np.sum(intersection) / np.sum(union)
 
 
+# calculating the accuracy for only one color channel
 def acc_for_semantic_class(target_color_channel, inferenced_color_channel):
     true_pos = np.logical_and(target_color_channel, inferenced_color_channel)
     true_neg = np.logical_and(np.logical_not(target_color_channel), np.logical_not(inferenced_color_channel))
@@ -19,6 +21,7 @@ def acc_for_semantic_class(target_color_channel, inferenced_color_channel):
     return (np.sum(true_pos) + np.sum(true_neg)) / (h * w)
 
 
+# calculating the accuracies for the three channels
 def acc_rgb(img_1, img_2):
     b = acc_for_semantic_class(img_1[:, :, 0], img_2[:, :, 0])
     g = acc_for_semantic_class(img_1[:, :, 1], img_2[:, :, 1])
@@ -26,6 +29,7 @@ def acc_rgb(img_1, img_2):
     return r, g, b
 
 
+# calculating the IoU for the three channels
 def iou_rgb(img_1, img_2):
     b = iou_for_semantic_class(img_1[:, :, 0], img_2[:, :, 0])
     g = iou_for_semantic_class(img_1[:, :, 1], img_2[:, :, 1])
@@ -33,6 +37,7 @@ def iou_rgb(img_1, img_2):
     return r, g, b
 
 
+# prepossessing the image with the via Precision-Recall-Curves estimated binary threshold's
 def preprocess_inference(inf, threshold):
     _, b = cv2.threshold(inf[:, :, 0], threshold[0], 255, cv2.THRESH_BINARY)
     _, g = cv2.threshold(inf[:, :, 1], threshold[1], 255, cv2.THRESH_BINARY)
@@ -43,6 +48,7 @@ def preprocess_inference(inf, threshold):
     return inf
 
 
+# calculating precision for a given channel
 def precision4channel(gt, inf):
     true_pos = np.sum(np.logical_and(gt, inf))
     predicted_cond_pos = np.sum(inf) / 255.0
@@ -51,6 +57,7 @@ def precision4channel(gt, inf):
     return true_pos / predicted_cond_pos
 
 
+# calculating the precision for the three channels
 def precision_rgb(gt, inf):
     # b, g, r = np.sum(np.logical_and(gt, inf), axis = (0, 1)) / (np.sum(inf, axis = (0, 1)) / 255.0)
     b = precision4channel(gt[:, :, 0], inf[:, :, 0])
@@ -59,6 +66,7 @@ def precision_rgb(gt, inf):
     return r, g, b
 
 
+# calculating recall for a given channel
 def recall4channel(gt, inf):
     true_pos = np.sum(np.logical_and(gt, inf))
     cond_pos = np.sum(gt) / 255.0
@@ -67,6 +75,7 @@ def recall4channel(gt, inf):
     return true_pos / cond_pos
 
 
+# calculating the recall for the three channels
 def recall_rgb(gt, inf):
     b = recall4channel(gt[:, :, 0], inf[:, :, 0])
     g = recall4channel(gt[:, :, 1], inf[:, :, 1])
@@ -74,6 +83,7 @@ def recall_rgb(gt, inf):
     return r, g, b
 
 
+# calculating the f1score's for the three channels
 def f1score_rgb(gt, inf):
     rr, rg, rb = recall_rgb(gt, inf)
     pr, pg, pb = precision_rgb(gt, inf)
@@ -92,12 +102,14 @@ def f1score_rgb(gt, inf):
     return f1r, f1g, f1b
 
 
-def colour_quota_rgb(img):
+# calculating the color quota's for the three channels
+def color_quota_rgb(img):
     h, w, _ = img.shape
     b, g, r = np.sum(img, axis = (0, 1)) / (255.0 * h * w)
     return r, g, b
 
 
+# calculating the best threshold for a channel with the precision * recall as metric
 def calc_best_th(por_3C):
     best_th = np.zeros(3)
     best_por = np.zeros(3)

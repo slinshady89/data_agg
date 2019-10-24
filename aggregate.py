@@ -49,11 +49,21 @@ def main(args):
             session = tf.Session('')
             KTF.set_session(session)
             KTF.set_learning_phase(1)
-
+            # initializes a trainer with already separated training and validation list
+            # an inference is done for all images in the agg_list after the idx_eval
             trainer = Trainer(_train_list = train,
                               _val_list = val,
-                              _inf_list = aggregator.agg_list[idx_eval:])
+                              _inf_list = aggregator.agg_list[idx_eval:],
+                              _base_dir = aggregator.base_dir,
+                              _img_dir = aggregator.img_dir,
+                              _label_dir = aggregator.label_dir,
+                              _inf_dir = aggregator.inf_dir,
+                              _dag_dir = aggregator.dag_dir,
+                              _log_dir = 'log/')
+            # setting of some hyper parameters
             trainer.batch_size = 8
+            # increasing epoch steps so the net has the chance to see all images of the training set in an epoch
+            # else it is observable that the validation loss doesn't decrease and the training is stopped
             trainer.epoch_steps = len(train) // trainer.batch_size
             trainer.val_steps = len(val) // trainer.batch_size
             trainer.n_epochs = 25
