@@ -19,6 +19,7 @@ class Evaluator(object):
         self.batch_size = 0
         self.stop_dagger = False
 
+    # subprocess of on image in evaluation. send back precision, recall, quota for all 3 channels
     def process_image(self, i):
         img_name = self.base_dir_ + self.inf_label_dir_ + self.agg_list_[i][self.keys_.name]
         inf_label = cv2.imread(img_name)
@@ -47,6 +48,7 @@ class Evaluator(object):
                                  [precision[2], recall[2], quota_gt[2]]])  # red channel
         return prec_rec_qut
 
+    # subprocessing a batch of images
     def process_batch(self, q, begin, batch_size):
         if begin + batch_size >= len(self.agg_list_):
             print(begin)
@@ -57,6 +59,7 @@ class Evaluator(object):
             prq[i - begin] = self.process_image(i)
         q.put(prq)
 
+    # processes the data separated onto multiple threads
     def process_prediction(self, agg_chunk, idx_eval):
         jobs = []
         q = multiprocessing.Queue()
