@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import multiprocessing
-from diagnostics import preprocess_inference, recall_rgb, precision_rgb, colour_quota_rgb
+from diagnostics import preprocess_inference, recall_rgb, precision_rgb, color_quota_rgb
 from aggregator import Keys
 
 
@@ -11,6 +11,7 @@ class Evaluator(object):
         self.inf_label_dir_ = _inf_label_dir
         self.gt_label_dir_ = _gt_label_dir
         self.agg_list_ = _agg_list
+        # threshold's estimated via the PoR-Curve
         self.threshold_ = np.array((69, 75, 110), dtype = np.int)
         self.keys_ = Keys()
         self.dag_it = 0
@@ -18,6 +19,7 @@ class Evaluator(object):
         self.batch_size = 0
         self.stop_dagger = False
 
+    # subprocess of on image in evaluation. send back precision, recall, quota for all 3 channels
     def process_image(self, i):
         img_name = self.base_dir_ + self.inf_label_dir_ + self.agg_list_[i][self.keys_.name]
         inf_label = cv2.imread(img_name)
@@ -37,7 +39,7 @@ class Evaluator(object):
 
         inf_label_proc = preprocess_inference(inf = inf_label, threshold = self.threshold_)
 
-        quota_gt = colour_quota_rgb(gt_label)
+        quota_gt = color_quota_rgb(gt_label)
         recall = recall_rgb(gt_label, inf_label_proc)
         precision = precision_rgb(gt_label, inf_label_proc)
 
@@ -46,6 +48,7 @@ class Evaluator(object):
                                  [precision[2], recall[2], quota_gt[2]]])  # red channel
         return prec_rec_qut
 
+    # subprocessing a batch of images
     def process_batch(self, q, begin, batch_size):
         if begin + batch_size >= len(self.agg_list_):
             print(begin)
@@ -56,9 +59,11 @@ class Evaluator(object):
             prq[i - begin] = self.process_image(i)
         q.put(prq)
 
+    # processes the data separated onto multiple threads
     def process_prediction(self, agg_chunk, idx_eval):
         jobs = []
         q = multiprocessing.Queue()
+        # starting num_max_threads threads each processing batch_size images
         for k in range(idx_eval, idx_eval + self.batch_size * self.num_max_threads, self.batch_size):
             p = multiprocessing.Process(target = self.process_batch, args = (q, k, self.batch_size))
             jobs.append([p, k])
@@ -74,6 +79,7 @@ class Evaluator(object):
                     agg_chunk[job[1] + batch_idx][self.keys_.quota_g] = prec_rec_quot[2]
             except ValueError as e:
                 print(job[1])
+        # wait until all threads are done to continue
         for job in jobs:
             job[0].join()
         print('Evaluationg rest of images from %d to %d' % (idx_eval + self.num_max_threads * self.batch_size,

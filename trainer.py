@@ -10,18 +10,25 @@ import keras.backend as K
 
 class Trainer(object):
     def __init__(self, _train_list, _val_list, _inf_list, _dag_it = 0, _input_shape = (256, 1024, 3),
-                 _train_steps = 500, _val_steps = 200, _num_epochs = 15, _batch_size = 4):
+                 _train_steps = 500, _val_steps = 200, _num_epochs = 15, _batch_size = 4,
+                 _base_dir = '/media/localadmin/Test/11Nils/kitti/dataset/sequences/Data/',
+                 _img_dir = 'images/',
+                 _label_dir = 'labels/',
+                 _inf_dir = 'inf/',
+                 _dag_dir = 'dagger/',
+                 _log_dir = 'log/',
+                 _test_inf_dir = 'inf_08/'):
         self.dag_it = _dag_it
         self.train_list = _train_list
         self.val_list = _val_list
         self.inf_list = _inf_list
-        self.base_dir = '/media/localadmin/Test/11Nils/kitti/dataset/sequences/Data/'
-        self.img_dir = 'images/'
-        self.label_dir = 'labels/'
-        self.inf_dir = 'inf/'
-        self.test_inf_dir = 'inf_08/'
-        self.dag_dir = 'dagger/'
-        self.log_dir = 'log/'
+        self.base_dir = _base_dir
+        self.img_dir = _img_dir
+        self.label_dir = _label_dir
+        self.inf_dir = _inf_dir
+        self.test_inf_dir = _test_inf_dir
+        self.dag_dir = _dag_dir
+        self.log_dir = _log_dir
         self.optimizer = 'adagrad'
         self.gpu_num = '0'  # '1'
         os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
